@@ -1,8 +1,0 @@
-name: ThermalLib
-version: 1.0.0
-api-version: 1.13
-author: TiveCS
-main: io.github.tivecs.thermallib.ThermalLib
-commands:
-  test:
-    description: test
