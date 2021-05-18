@@ -3,6 +3,7 @@ package io.github.tivecs.thermallib.storage;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,9 +12,9 @@ import java.util.List;
 public class StorageYML extends Storage {
 
     private File file;
-    private FileConfiguration config = null;
+    private FileConfiguration config;
 
-    public StorageYML(File file){
+    public StorageYML(@Nonnull File file){
         super();
         this.file = file;
         if (!file.getParentFile().exists()){
@@ -69,6 +70,17 @@ public class StorageYML extends Storage {
     public void setIfNotExists(String path, Object value) {
         if (!getData().containsKey(path)){
             set(path, value);
+        }
+    }
+
+    public void createSection(String path){
+        getData().put(path, getConfig().createSection(path));
+        getChangeHistory().put(path, ChangeHistory.EDIT);
+    }
+
+    public void createSectionIfNotExists(String path){
+        if (!getData().containsKey(path)){
+            createSection(path);
         }
     }
 
