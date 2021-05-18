@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class StorageYML extends Storage {
 
@@ -94,6 +96,16 @@ public class StorageYML extends Storage {
     @Override
     public boolean has(String path) {
         return getConfig().contains(path);
+    }
+
+    @Override
+    public Object get(String path) {
+        return getData().get(path);
+    }
+
+    @Override
+    public Set<String> findChild(String parent) {
+        return getData().keySet().stream().filter(path -> path.startsWith(parent)).collect(Collectors.toSet());
     }
 
     public File getFile() {
