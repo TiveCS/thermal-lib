@@ -11,6 +11,6 @@ public interface StorageAction {
     void remove(String path);
     boolean has(String path);
     Object get(String path);
-    Set<String> findChild(String parent);
+    Set<String> findChild(String parent, boolean deep);
 
 }

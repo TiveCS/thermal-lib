@@ -1,5 +1,6 @@
 package io.github.tivecs.thermallib.storage;
 
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -7,6 +8,7 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -104,8 +106,20 @@ public class StorageYML extends Storage {
     }
 
     @Override
-    public Set<String> findChild(String parent) {
-        return getData().keySet().stream().filter(path -> path.startsWith(parent)).collect(Collectors.toSet());
+    public Set<String> findChild(String parent, boolean deep) {
+        if (deep) {
+            return getData().keySet().stream().filter(path -> path.startsWith(parent)).collect(Collectors.toSet());
+        }else{
+            HashSet<String> sets = new HashSet<>();
+            if (get(parent) != null){
+                ConfigurationSection section = (ConfigurationSection) get(parent);
+                for (String child : section.getKeys(false)){
+                    String path = parent + "." + child;
+                    sets.add(path);
+                }
+            }
+            return sets;
+        }
     }
 
     public File getFile() {
