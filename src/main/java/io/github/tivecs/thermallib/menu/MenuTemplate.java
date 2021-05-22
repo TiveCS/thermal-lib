@@ -5,6 +5,7 @@ import io.github.tivecs.thermallib.storage.StorageYML;
 import io.github.tivecs.thermallib.utils.ItemBuilder;
 import io.github.tivecs.thermallib.utils.StringUtils;
 import io.github.tivecs.thermallib.utils.XMaterial;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -80,27 +81,38 @@ public abstract class MenuTemplate {
     /**
      * Load saved data from file
      */
+    @SuppressWarnings("unchecked")
     public void loadData(){
-        FileConfiguration config = getMenuStorage().getConfig();
+        setRows((Integer) getMenuStorage().get("rows"));
+        setTitle(StringUtils.colored((String) getMenuStorage().get("title")));
 
-        setRows(config.getInt("rows"));
-        setTitle(StringUtils.colored(config.getString("title")));
+        ConfigurationSection rootComponents = getMenuStorage().has("components") ? (ConfigurationSection) getMenuStorage().get("components") : null;
+        if (rootComponents != null){
+            for (String componentId : rootComponents.getKeys(false)){
+                String path = "components." + componentId;
+                MenuComponent component = null;
 
-        for (String componentId : config.getConfigurationSection("components").getKeys(false)){
-            String path = "components." + componentId;
-            MenuComponent component = null;
-            for (String state : config.getConfigurationSection(path + ".state-items").getKeys(false)){
-                String statePath = path + ".state-items." + state;
+                ConfigurationSection rootStateItems = getMenuStorage().has(path + ".state-items") ? (ConfigurationSection) getMenuStorage().get(path + ".state-items") : null;
+                if (rootStateItems != null){
+                    for (String state : rootStateItems.getKeys(false)){
+                        String statePath = path + ".state-items." + state;
 
-                XMaterial material = XMaterial.matchXMaterial(config.getString(statePath + ".material").toUpperCase()).get();
-                String displayName = config.contains(statePath + ".display-name") ? StringUtils.colored(config.getString(statePath + ".display-name")) : null;
-                List<String> lore = config.contains(statePath + ".lore") ? StringUtils.colored(config.getStringList(statePath + ".lore")) : null;
+                        XMaterial material;
+                        String materialString = getMenuStorage().has(statePath + ".material") ? (String) getMenuStorage().get(statePath + ".material") : null;
+                        if (materialString != null) {
+                            material = XMaterial.matchXMaterial(materialString.toUpperCase()).get();
 
-                component = addComponent(componentId, state, material, displayName, lore);
-            }
+                            String displayName = getMenuStorage().has(statePath + ".display-name") ? StringUtils.colored((String) getMenuStorage().get(statePath + ".display-name")) : null;
+                            List<String> lore = getMenuStorage().has(statePath + ".lore") ? StringUtils.colored((List<String>) getMenuStorage().get(statePath + ".lore")) : null;
 
-            if (component != null){
-                component.setSlots(Ints.toArray(config.getIntegerList(path + ".slots")));
+                            component = addComponent(componentId, state, material, displayName, lore);
+                        }
+                    }
+                }
+
+                if (component != null){
+                    component.setSlots(Ints.toArray((List<Integer>) getMenuStorage().get(path + ".slots")));
+                }
             }
         }
     }

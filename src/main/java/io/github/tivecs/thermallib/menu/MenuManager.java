@@ -1,5 +1,6 @@
 package io.github.tivecs.thermallib.menu;
 
+import io.github.tivecs.thermallib.menu.events.MenuComponentClickEvent;
 import io.github.tivecs.thermallib.storage.StorageYML;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -44,6 +45,19 @@ public class MenuManager implements Listener {
             MenuObject menuObject = getViewers().get(uuid);
             if (event.getInventory().equals(menuObject.getMenuView())){
                 menuObject.getTemplate().onClick(menuObject, event);
+
+                MenuPageData pageData = menuObject.getPageData().get(menuObject.getPage());
+                String componentId = pageData.getPageSlotData().getSlotComponents().get(event.getSlot());
+                if (componentId != null){
+                    MenuComponent component = menuObject.getTemplate().getComponents().get(componentId);
+                    MenuComponentClickEvent componentClickEvent = new MenuComponentClickEvent(menuObject, event, component);
+                    Bukkit.getPluginManager().callEvent(componentClickEvent);
+                    if (componentClickEvent.isCancelled()){
+                        return;
+                    }
+
+                    component.getAction().clickAction(menuObject, event);
+                }
             }
         }
     }
@@ -51,6 +65,11 @@ public class MenuManager implements Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event){
         getViewers().remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onComponentClick(MenuComponentClickEvent event){
+        Bukkit.broadcastMessage("Component clicked : " + event.getClickedComponent().getId());
     }
 
     public void registerTemplates(MenuTemplate... templates){

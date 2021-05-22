@@ -2,6 +2,7 @@ package io.github.tivecs.thermallib.menu;
 
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class MenuComponent {
@@ -100,5 +101,17 @@ public class MenuComponent {
 
     public HashMap<String, ItemStack> getStateItems() {
         return stateItems;
+    }
+
+    @Override
+    public String toString() {
+        return "MenuComponent{" +
+                "id='" + id + '\'' +
+                ", stateItems=" + stateItems +
+                ", minPage=" + minPage +
+                ", maxPage=" + maxPage +
+                ", slots=" + Arrays.toString(slots) +
+                ", action=" + action +
+                '}';
     }
 }

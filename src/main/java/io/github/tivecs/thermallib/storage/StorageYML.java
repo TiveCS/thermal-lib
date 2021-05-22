@@ -97,7 +97,7 @@ public class StorageYML extends Storage {
 
     @Override
     public boolean has(String path) {
-        return getConfig().contains(path);
+        return getData().containsKey(path);
     }
 
     @Override
