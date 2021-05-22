@@ -67,11 +67,6 @@ public class MenuManager implements Listener {
         getViewers().remove(event.getPlayer().getUniqueId());
     }
 
-    @EventHandler
-    public void onComponentClick(MenuComponentClickEvent event){
-        Bukkit.broadcastMessage("Component clicked : " + event.getClickedComponent().getId());
-    }
-
     public void registerTemplates(MenuTemplate... templates){
         if (templates.length > 0){
             for (MenuTemplate template : templates){

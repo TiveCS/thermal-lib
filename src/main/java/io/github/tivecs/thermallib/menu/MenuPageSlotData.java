@@ -13,14 +13,14 @@ public class MenuPageSlotData {
     private final HashMap<Integer, String> slotComponents;
     private final HashMap<Integer, String> slotStates;
 
-    public MenuPageSlotData(MenuPageData pageData){
+    public MenuPageSlotData(MenuPageData pageData) {
         this.pageData = pageData;
         this.slotComponents = new HashMap<>();
         this.slotStates = new HashMap<>();
         this.slotItems = new HashMap<>();
     }
 
-    public void clear(){
+    public void clear() {
         getSlotComponents().clear();
         getSlotItems().clear();
         getSlotStates().clear();
@@ -29,18 +29,18 @@ public class MenuPageSlotData {
     /**
      * Update slot's state
      *
-     * @param slot target slot
+     * @param slot  target slot
      * @param state target slot's next state
      */
-    public void updateState(int slot, String state){
+    public void updateState(int slot, String state) {
         String componentId = getSlotComponents().get(slot);
         MenuComponent component = getPageData().getMenuObject().getTemplate().getComponents().get(componentId);
         MenuObject menuObject = getPageData().getMenuObject();
         state = state.toLowerCase();
 
-        MenuComponentStateUpdateEvent stateUpdateEvent = new MenuComponentStateUpdateEvent(menuObject, slot, getSlotStates().get(slot), state.toLowerCase());
+        MenuComponentStateUpdateEvent stateUpdateEvent = new MenuComponentStateUpdateEvent(menuObject, slot, getSlotStates().get(slot).toLowerCase(), state.toLowerCase());
         Bukkit.getPluginManager().callEvent(stateUpdateEvent);
-        if (stateUpdateEvent.isCancelled()){
+        if (stateUpdateEvent.isCancelled()) {
             return;
         }
 
@@ -53,11 +53,11 @@ public class MenuPageSlotData {
     /**
      * Check if selected slot is same state as parameter state
      *
-     * @param slot selected slot
+     * @param slot  selected slot
      * @param state checked state
      * @return true if state is same as parameter state
      */
-    public boolean isOnState(int slot, String state){
+    public boolean isOnState(int slot, String state) {
         return getSlotStates().get(slot).equalsIgnoreCase(state);
     }
 

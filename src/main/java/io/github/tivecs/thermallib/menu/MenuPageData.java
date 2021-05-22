@@ -30,7 +30,9 @@ public class MenuPageData {
             for (int slot : slots){
                 getPageSlotData().getSlotStates().put(slot, "default");
                 getPageSlotData().getSlotComponents().put(slot, component.getId());
-                getPageSlotData().getSlotItems().put(slot, component.getStateItems().get("default").clone());
+                if (component.getStateItems().containsKey("default")) {
+                    getPageSlotData().getSlotItems().put(slot, component.getStateItems().get("default").clone());
+                }
             }
         }
 
