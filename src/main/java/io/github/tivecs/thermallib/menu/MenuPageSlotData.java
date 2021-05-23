@@ -20,6 +20,9 @@ public class MenuPageSlotData {
         this.slotItems = new HashMap<>();
     }
 
+    /**
+     * Clear all slot configuration on this page data
+     */
     public void clear() {
         getSlotComponents().clear();
         getSlotItems().clear();

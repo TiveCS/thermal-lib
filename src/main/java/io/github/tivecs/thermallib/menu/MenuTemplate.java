@@ -1,12 +1,15 @@
 package io.github.tivecs.thermallib.menu;
 
 import com.google.common.primitives.Ints;
+import io.github.tivecs.thermallib.menu.events.MenuObjectCreateEvent;
+import io.github.tivecs.thermallib.menu.events.MenuViewCloseEvent;
+import io.github.tivecs.thermallib.menu.events.MenuViewOpenEvent;
 import io.github.tivecs.thermallib.storage.StorageYML;
 import io.github.tivecs.thermallib.utils.ItemBuilder;
 import io.github.tivecs.thermallib.utils.StringUtils;
 import io.github.tivecs.thermallib.utils.XMaterial;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -26,7 +29,7 @@ public abstract class MenuTemplate {
     private HashMap<String, MenuComponent> components;
     private HashMap<Integer, List<MenuComponent>> componentsPerPage;
 
-    public MenuTemplate(String id, String title, int rows){
+    public MenuTemplate(String id, String title, int rows) {
         this.id = id.toLowerCase();
         this.rows = rows;
         this.title = title;
@@ -38,26 +41,46 @@ public abstract class MenuTemplate {
      * Executed when player clicked on menu view
      *
      * @param menuObject menu view's object
-     * @param event click event
+     * @param event      click event
      */
     public abstract void onClick(MenuObject menuObject, InventoryClickEvent event);
 
+    /**
+     *
+     * @param menuObject
+     * @param event
+     */
+    public abstract void onMenuObjectCreated(MenuObject menuObject, MenuObjectCreateEvent event);
+
+    /**
+     *
+     * @param menuObject
+     * @param event
+     */
+    public abstract void onViewOpen(MenuObject menuObject, MenuViewOpenEvent event);
+
+    /**
+     *
+     * @param menuObject
+     * @param event
+     */
+    public abstract void onViewClose(MenuObject menuObject, MenuViewCloseEvent event);
 
     /**
      * Save existing components into file
      */
-    public void saveComponents(){
-        if (getMenuStorage() != null){
+    public void saveComponents() {
+        if (getMenuStorage() != null) {
             getMenuStorage().setIfNotExists("title", getTitle());
             getMenuStorage().setIfNotExists("rows", getRows());
 
-            for (MenuComponent component : getComponents().values()){
+            for (MenuComponent component : getComponents().values()) {
                 String path = "components." + component.getId();
                 getMenuStorage().setIfNotExists(path + ".min-page", component.getMinPage());
                 getMenuStorage().setIfNotExists(path + ".max-page", component.getMaxPage());
                 getMenuStorage().setIfNotExists(path + ".slots", component.getSlots());
 
-                for (String state : component.getStateItems().keySet()){
+                for (String state : component.getStateItems().keySet()) {
                     String statePath = path + ".state-items." + state;
                     ItemStack item = component.getStateItems().get(state);
                     ItemMeta meta = item.getItemMeta();
@@ -67,7 +90,7 @@ public abstract class MenuTemplate {
                         if (meta.hasDisplayName()) {
                             getMenuStorage().setIfNotExists(statePath + ".display-name", meta.getDisplayName());
                         }
-                        if (meta.hasLore()){
+                        if (meta.hasLore()) {
                             getMenuStorage().setIfNotExists(statePath + ".lore", meta.getLore());
                         }
                     }
@@ -82,19 +105,19 @@ public abstract class MenuTemplate {
      * Load saved data from file
      */
     @SuppressWarnings("unchecked")
-    public void loadData(){
+    public void loadData() {
         setRows((Integer) getMenuStorage().get("rows"));
         setTitle(StringUtils.colored((String) getMenuStorage().get("title")));
 
         ConfigurationSection rootComponents = getMenuStorage().has("components") ? (ConfigurationSection) getMenuStorage().get("components") : null;
-        if (rootComponents != null){
-            for (String componentId : rootComponents.getKeys(false)){
+        if (rootComponents != null) {
+            for (String componentId : rootComponents.getKeys(false)) {
                 String path = "components." + componentId;
                 MenuComponent component = null;
 
                 ConfigurationSection rootStateItems = getMenuStorage().has(path + ".state-items") ? (ConfigurationSection) getMenuStorage().get(path + ".state-items") : null;
-                if (rootStateItems != null){
-                    for (String state : rootStateItems.getKeys(false)){
+                if (rootStateItems != null) {
+                    for (String state : rootStateItems.getKeys(false)) {
                         String statePath = path + ".state-items." + state;
 
                         XMaterial material;
@@ -110,7 +133,7 @@ public abstract class MenuTemplate {
                     }
                 }
 
-                if (component != null){
+                if (component != null) {
                     component.setSlots(Ints.toArray((List<Integer>) getMenuStorage().get(path + ".slots")));
                 }
             }
@@ -122,22 +145,24 @@ public abstract class MenuTemplate {
      *
      * @return created menu object
      */
-    public MenuObject createObject(){
+    public MenuObject createObject() {
         MenuObject menuObject = new MenuObject(this);
 
         menuObject.initialize();
 
+        MenuObjectCreateEvent objectCreateEvent = new MenuObjectCreateEvent(this, menuObject);
+        Bukkit.getPluginManager().callEvent(objectCreateEvent);
         return menuObject;
     }
 
     /**
      * Filter list of used components on selected page.
      *
-     * @param page selected page
+     * @param page   selected page
      * @param update list of used components on selected page will be updated if this parameter value is true
      * @return list of used components on selected page
      */
-    public List<MenuComponent> filterComponentOnPage(int page, boolean update){
+    public List<MenuComponent> filterComponentOnPage(int page, boolean update) {
         List<MenuComponent> components = getComponentsPerPage().get(page);
         if (update || components == null) {
             components = new ArrayList<>();
@@ -159,7 +184,7 @@ public abstract class MenuTemplate {
      * @param page selected page
      * @return list of used components on selected page
      */
-    public List<MenuComponent> filterComponentOnPage(int page){
+    public List<MenuComponent> filterComponentOnPage(int page) {
         return filterComponentOnPage(page, false);
     }
 
@@ -168,13 +193,13 @@ public abstract class MenuTemplate {
      * If component already exists, the component will be edited instead.
      *
      * @param componentId component id
-     * @param state state address of state item
-     * @param item component's state item
+     * @param state       state address of state item
+     * @param item        component's state item
      * @return created component
      */
     public MenuComponent addComponent(String componentId, String state, ItemStack item) {
         MenuComponent component = getComponents().getOrDefault(componentId, new MenuComponent(componentId));
-        if (!getComponents().containsKey(componentId)){
+        if (!getComponents().containsKey(componentId)) {
             getComponents().put(componentId, component);
         }
 
@@ -186,13 +211,13 @@ public abstract class MenuTemplate {
      * If component already exists, the component will be edited instead.
      *
      * @param componentId component id
-     * @param state state address of state item
-     * @param material material of state item
+     * @param state       state address of state item
+     * @param material    material of state item
      * @param displayName display name of state item
-     * @param lore lore of state item
+     * @param lore        lore of state item
      * @return created component
      */
-    public MenuComponent addComponent(String componentId, String state, XMaterial material, String displayName, List<String> lore){
+    public MenuComponent addComponent(String componentId, String state, XMaterial material, String displayName, List<String> lore) {
         ItemStack item = new ItemBuilder().setMaterial(material).setDisplayName(displayName).setLore(lore).build();
         return addComponent(componentId, state, item);
     }
@@ -202,16 +227,16 @@ public abstract class MenuTemplate {
      * If component already exists, the component will be edited instead.
      *
      * @param componentId component id
-     * @param state state address of state item
-     * @param item component's state item
-     * @param minPage component's minimum page
-     * @param maxPage component's maximum page
-     * @param slots component's slots
+     * @param state       state address of state item
+     * @param item        component's state item
+     * @param minPage     component's minimum page
+     * @param maxPage     component's maximum page
+     * @param slots       component's slots
      * @return created component
      */
     public MenuComponent addComponent(String componentId, String state, ItemStack item, int minPage, int maxPage, int[] slots) {
         MenuComponent component = getComponents().getOrDefault(componentId, new MenuComponent(componentId));
-        if (!getComponents().containsKey(componentId)){
+        if (!getComponents().containsKey(componentId)) {
             getComponents().put(componentId, component);
         }
 
@@ -223,16 +248,16 @@ public abstract class MenuTemplate {
      * If component already exists, the component will be edited instead.
      *
      * @param componentId component id
-     * @param state state address of state item
-     * @param material material of state item
+     * @param state       state address of state item
+     * @param material    material of state item
      * @param displayName display name of state item
-     * @param lore lore of state item
-     * @param minPage component's minimum page
-     * @param maxPage component's maximum page
-     * @param slots component's slots
+     * @param lore        lore of state item
+     * @param minPage     component's minimum page
+     * @param maxPage     component's maximum page
+     * @param slots       component's slots
      * @return created component
      */
-    public MenuComponent addComponent(String componentId, String state, XMaterial material, String displayName, List<String> lore, int minPage, int maxPage, int[] slots){
+    public MenuComponent addComponent(String componentId, String state, XMaterial material, String displayName, List<String> lore, int minPage, int maxPage, int[] slots) {
         ItemStack item = new ItemBuilder().setMaterial(material).setDisplayName(displayName).setLore(lore).build();
         return addComponent(componentId, state, item, minPage, maxPage, slots);
     }
@@ -242,15 +267,15 @@ public abstract class MenuTemplate {
      * If component already exists, the component will be edited instead.
      *
      * @param componentId component id
-     * @param item component's state item
-     * @param minPage component's minimum page
-     * @param maxPage component's maximum page
-     * @param slots component's slots
+     * @param item        component's state item
+     * @param minPage     component's minimum page
+     * @param maxPage     component's maximum page
+     * @param slots       component's slots
      * @return created component
      */
-    public MenuComponent addComponent(String componentId, ItemStack item, int minPage, int maxPage, int[] slots){
+    public MenuComponent addComponent(String componentId, ItemStack item, int minPage, int maxPage, int[] slots) {
         MenuComponent component = getComponents().getOrDefault(componentId, new MenuComponent(componentId));
-        if (!getComponents().containsKey(componentId)){
+        if (!getComponents().containsKey(componentId)) {
             getComponents().put(componentId, component);
         }
 
@@ -262,15 +287,15 @@ public abstract class MenuTemplate {
      * If component already exists, the component will be edited instead.
      *
      * @param componentId component id
-     * @param material material of state item
+     * @param material    material of state item
      * @param displayName display name of state item
-     * @param lore lore of state item
-     * @param minPage component's minimum page
-     * @param maxPage component's maximum page
-     * @param slots component's slots
+     * @param lore        lore of state item
+     * @param minPage     component's minimum page
+     * @param maxPage     component's maximum page
+     * @param slots       component's slots
      * @return created component
      */
-    public MenuComponent addComponent(String componentId, XMaterial material, String displayName, List<String> lore, int minPage, int maxPage, int[] slots){
+    public MenuComponent addComponent(String componentId, XMaterial material, String displayName, List<String> lore, int minPage, int maxPage, int[] slots) {
         ItemStack item = new ItemBuilder().setMaterial(material).setDisplayName(displayName).setLore(lore).build();
         return addComponent(componentId, item, minPage, maxPage, slots);
     }

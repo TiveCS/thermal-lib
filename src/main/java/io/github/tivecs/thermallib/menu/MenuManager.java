@@ -1,6 +1,9 @@
 package io.github.tivecs.thermallib.menu;
 
 import io.github.tivecs.thermallib.menu.events.MenuComponentClickEvent;
+import io.github.tivecs.thermallib.menu.events.MenuObjectCreateEvent;
+import io.github.tivecs.thermallib.menu.events.MenuViewCloseEvent;
+import io.github.tivecs.thermallib.menu.events.MenuViewOpenEvent;
 import io.github.tivecs.thermallib.storage.StorageYML;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -19,6 +22,7 @@ public class MenuManager implements Listener {
 
     private JavaPlugin plugin;
     private HashMap<String, MenuTemplate> templates;
+    private HashMap<UUID, HashMap<String, MenuObject>> viewersObjectData; // viewer, <template id, menu object>
     private HashMap<UUID, MenuObject> viewers;
     private File menuFolder;
 
@@ -64,7 +68,27 @@ public class MenuManager implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event){
+        if (getViewers().containsKey(event.getPlayer().getUniqueId())) {
+            MenuObject menuObject = getViewers().get(event.getPlayer().getUniqueId());
+            MenuViewCloseEvent viewCloseEvent = new MenuViewCloseEvent(menuObject, event);
+            Bukkit.getPluginManager().callEvent(viewCloseEvent);
+        }
         getViewers().remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onViewClose(MenuViewCloseEvent event){
+        event.getMenuObject().getTemplate().onViewClose(event.getMenuObject(), event);
+    }
+
+    @EventHandler
+    public void onViewOpen(MenuViewOpenEvent event){
+        event.getMenuObject().getTemplate().onViewOpen(event.getMenuObject(), event);
+    }
+
+    @EventHandler
+    public void onMenuObjectCreated(MenuObjectCreateEvent event){
+        event.getTemplate().onMenuObjectCreated(event.getCreatedObject(), event);
     }
 
     public void registerTemplates(MenuTemplate... templates){
@@ -89,14 +113,19 @@ public class MenuManager implements Listener {
             MenuObject menuObject;
             UUID uuid = player.getUniqueId();
 
+            MenuViewOpenEvent viewOpenEvent;
             if (getViewers().containsKey(uuid) && getViewers().get(uuid).getTemplate().getId().equalsIgnoreCase(templateId)){
                 menuObject = getViewers().get(uuid);
+                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, true);
                 menuObject.setPage(page);
             }else{
                 menuObject = template.createObject();
+                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, false);
                 getViewers().put(uuid, menuObject);
                 player.openInventory(menuObject.getMenuView());
             }
+
+            Bukkit.getPluginManager().callEvent(viewOpenEvent);
         }
     }
 

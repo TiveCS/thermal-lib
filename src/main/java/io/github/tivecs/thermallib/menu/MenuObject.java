@@ -1,5 +1,6 @@
 package io.github.tivecs.thermallib.menu;
 
+import io.github.tivecs.thermallib.menu.events.MenuObjectMetadataUpdateEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
 
@@ -13,12 +14,14 @@ public class MenuObject {
     private MenuTemplate template;
     private Inventory menuView;
     private HashMap<Integer, MenuPageData> pageData;
+    private HashMap<String, Object> metadata;
     private int page;
 
     public MenuObject(MenuTemplate template) {
         this.template = template;
         this.page = 1;
         this.pageData = new HashMap<>();
+        this.metadata = new HashMap<>();
     }
 
     /**
@@ -59,8 +62,43 @@ public class MenuObject {
         render(getPage());
     }
 
+    /**
+     *
+     * @param key
+     * @param value
+     */
+    public void updateMetadata(String key, Object value){
+        MenuObjectMetadataUpdateEvent.UpdateAction updateAction = getMetadata().containsKey(key) ? MenuObjectMetadataUpdateEvent.UpdateAction.UPDATE : MenuObjectMetadataUpdateEvent.UpdateAction.CREATE;
+
+        MenuObjectMetadataUpdateEvent updateEvent = new MenuObjectMetadataUpdateEvent(this, key, getMetadata().get(key), value, updateAction);
+        Bukkit.getPluginManager().callEvent(updateEvent);
+
+        if (!updateEvent.isCancelled()){
+            getMetadata().put(key, value);
+        }
+    }
+
+    /**
+     *
+     * @param key
+     */
+    public void deleteMetadata(String key){
+        MenuObjectMetadataUpdateEvent.UpdateAction updateAction = MenuObjectMetadataUpdateEvent.UpdateAction.DELETE;
+
+        MenuObjectMetadataUpdateEvent updateEvent = new MenuObjectMetadataUpdateEvent(this, key, getMetadata().get(key), null, updateAction);
+        Bukkit.getPluginManager().callEvent(updateEvent);
+
+        if (!updateEvent.isCancelled()) {
+            getMetadata().remove(key);
+        }
+    }
+
     public void setMenuView(Inventory menuView) {
         this.menuView = menuView;
+    }
+
+    public HashMap<String, Object> getMetadata() {
+        return metadata;
     }
 
     public HashMap<Integer, MenuPageData> getPageData() {

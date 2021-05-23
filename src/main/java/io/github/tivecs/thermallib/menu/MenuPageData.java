@@ -1,6 +1,5 @@
 package io.github.tivecs.thermallib.menu;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 public class MenuPageData {
