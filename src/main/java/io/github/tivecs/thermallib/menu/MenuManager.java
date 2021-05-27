@@ -113,20 +113,43 @@ public class MenuManager implements Listener {
             MenuObject menuObject;
             UUID uuid = player.getUniqueId();
 
+            // TODO add viewers object data
+            // (?) Viewer object data = cache of menu object that created by viewer
+            HashMap<String, MenuObject> objectData = getViewersObjectData().computeIfAbsent(uuid, k -> new HashMap<>());
+
             MenuViewOpenEvent viewOpenEvent;
-            if (getViewers().containsKey(uuid) && getViewers().get(uuid).getTemplate().getId().equalsIgnoreCase(templateId)){
+            if (objectData.containsKey(template.getId())){
+                menuObject = objectData.get(template.getId());
+                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, true);
+            }else{
+                menuObject = template.createObject();
+                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, false);
+            }
+
+            menuObject.setPage(page);
+            if (!(getViewers().containsKey(uuid) && getViewers().get(uuid).getTemplate().getId().equalsIgnoreCase(templateId))){
+                getViewers().put(uuid, menuObject);
+                objectData.put(template.getId(), menuObject);
+                player.openInventory(menuObject.getMenuView());
+            }
+
+            /*if (getViewers().containsKey(uuid) && getViewers().get(uuid).getTemplate().getId().equalsIgnoreCase(templateId)){ // if viewer want to change page
                 menuObject = getViewers().get(uuid);
                 viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, true);
                 menuObject.setPage(page);
-            }else{
+            }else{ // if viewer never open the menu before, it create menu object
                 menuObject = template.createObject();
                 viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, false);
                 getViewers().put(uuid, menuObject);
                 player.openInventory(menuObject.getMenuView());
-            }
+            }*/
 
             Bukkit.getPluginManager().callEvent(viewOpenEvent);
         }
+    }
+
+    public HashMap<UUID, HashMap<String, MenuObject>> getViewersObjectData() {
+        return viewersObjectData;
     }
 
     public HashMap<UUID, MenuObject> getViewers() {
