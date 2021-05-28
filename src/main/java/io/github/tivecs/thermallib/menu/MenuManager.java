@@ -4,6 +4,7 @@ import io.github.tivecs.thermallib.menu.events.MenuComponentClickEvent;
 import io.github.tivecs.thermallib.menu.events.MenuObjectCreateEvent;
 import io.github.tivecs.thermallib.menu.events.MenuViewCloseEvent;
 import io.github.tivecs.thermallib.menu.events.MenuViewOpenEvent;
+import io.github.tivecs.thermallib.menu.exception.MenuTemplateNotFoundException;
 import io.github.tivecs.thermallib.storage.StorageYML;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -31,6 +32,7 @@ public class MenuManager implements Listener {
         this.menuFolder = new File(plugin.getDataFolder(), "menu");
         this.templates = new HashMap<>();
         this.viewers = new HashMap<>();
+        this.viewersObjectData = new HashMap<>();
 
         if (!getMenuFolder().exists()){
             if (!plugin.getDataFolder().exists()){
@@ -105,7 +107,7 @@ public class MenuManager implements Listener {
         }
     }
 
-    public void open(Player player, String templateId, int page){
+    public void open(Player player, String templateId, int page) throws MenuTemplateNotFoundException {
         MenuTemplate template = getTemplates().get(templateId);
 
         if (template != null){
@@ -115,7 +117,13 @@ public class MenuManager implements Listener {
 
             // TODO add viewers object data
             // (?) Viewer object data = cache of menu object that created by viewer
-            HashMap<String, MenuObject> objectData = getViewersObjectData().computeIfAbsent(uuid, k -> new HashMap<>());
+            HashMap<String, MenuObject> objectData;
+            if (getViewersObjectData().containsKey(uuid)){
+                objectData = getViewersObjectData().get(uuid);
+            }else{
+                objectData = new HashMap<>();
+                getViewersObjectData().put(uuid, objectData);
+            }
 
             MenuViewOpenEvent viewOpenEvent;
             if (objectData.containsKey(template.getId())){
@@ -145,6 +153,8 @@ public class MenuManager implements Listener {
             }*/
 
             Bukkit.getPluginManager().callEvent(viewOpenEvent);
+        }else{
+            throw new MenuTemplateNotFoundException("Template not found: " + templateId);
         }
     }
 
