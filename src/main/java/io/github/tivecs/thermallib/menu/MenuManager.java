@@ -93,6 +93,11 @@ public class MenuManager implements Listener {
         event.getTemplate().onMenuObjectCreated(event.getCreatedObject(), event);
     }
 
+    /**
+     * Register created template
+     *
+     * @param templates template list
+     */
     public void registerTemplates(MenuTemplate... templates){
         if (templates.length > 0){
             for (MenuTemplate template : templates){
@@ -107,54 +112,102 @@ public class MenuManager implements Listener {
         }
     }
 
-    public void open(Player player, String templateId, int page) throws MenuTemplateNotFoundException {
-        MenuTemplate template = getTemplates().get(templateId);
+    /**
+     * Open target player's menu object by its template id
+     *
+     * @param viewer the player who want to open menu
+     * @param otherPlayer the target player that will be used to get menu object
+     * @param templateId menu object's template id
+     * @param page menu object's target page
+     * @throws MenuTemplateNotFoundException throw when template is not found
+     */
+    public void open(Player viewer, UUID otherPlayer, String templateId, int page) throws MenuTemplateNotFoundException {
+        templateId = templateId.toLowerCase();
+        MenuTemplate template = findTemplate(templateId);
 
         if (template != null){
-            player.closeInventory();
+            viewer.closeInventory();
             MenuObject menuObject;
-            UUID uuid = player.getUniqueId();
+            UUID viewerUniqueId = viewer.getUniqueId();
 
-            // TODO add viewers object data
-            // (?) Viewer object data = cache of menu object that created by viewer
-            HashMap<String, MenuObject> objectData;
-            if (getViewersObjectData().containsKey(uuid)){
-                objectData = getViewersObjectData().get(uuid);
-            }else{
-                objectData = new HashMap<>();
-                getViewersObjectData().put(uuid, objectData);
-            }
+            HashMap<String, MenuObject> objectData = getPlayerViewerData(otherPlayer);
 
             MenuViewOpenEvent viewOpenEvent;
-            if (objectData.containsKey(template.getId())){
-                menuObject = objectData.get(template.getId());
-                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, true);
-            }else{
-                menuObject = template.createObject();
-                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, false);
-            }
+            boolean isAlreadyCreated = objectData.containsKey(template.getId());
+            menuObject = getPlayerMenuObject(objectData, templateId);
+            viewOpenEvent = new MenuViewOpenEvent(menuObject, viewer, menuObject.getPage(), page, isAlreadyCreated);
 
             menuObject.setPage(page);
-            if (!(getViewers().containsKey(uuid) && getViewers().get(uuid).getTemplate().getId().equalsIgnoreCase(templateId))){
-                getViewers().put(uuid, menuObject);
+            if (!(getViewers().containsKey(viewerUniqueId) && getViewers().get(viewerUniqueId).getTemplate().getId().equalsIgnoreCase(templateId))){
+                getViewers().put(viewerUniqueId, menuObject);
                 objectData.put(template.getId(), menuObject);
-                player.openInventory(menuObject.getMenuView());
+                viewer.openInventory(menuObject.getMenuView());
             }
 
-            /*if (getViewers().containsKey(uuid) && getViewers().get(uuid).getTemplate().getId().equalsIgnoreCase(templateId)){ // if viewer want to change page
-                menuObject = getViewers().get(uuid);
-                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, true);
-                menuObject.setPage(page);
-            }else{ // if viewer never open the menu before, it create menu object
-                menuObject = template.createObject();
-                viewOpenEvent = new MenuViewOpenEvent(menuObject, player, menuObject.getPage(), page, false);
-                getViewers().put(uuid, menuObject);
-                player.openInventory(menuObject.getMenuView());
-            }*/
-
             Bukkit.getPluginManager().callEvent(viewOpenEvent);
+        }
+    }
+
+    /**
+     * Open player's own menu by its template id
+     *
+     * @param player the player who want to open menu
+     * @param templateId menu object's template id
+     * @param page menu object's target page
+     * @throws MenuTemplateNotFoundException throw when template is not found
+     */
+    public void open(Player player, String templateId, int page) throws MenuTemplateNotFoundException {
+        open(player, player.getUniqueId(), templateId, page);
+    }
+
+    /**
+     * Find template by id
+     *
+     * @param templateId target template id
+     * @return menu template
+     * @throws MenuTemplateNotFoundException throw when template is not found
+     */
+    public MenuTemplate findTemplate(String templateId) throws MenuTemplateNotFoundException {
+        templateId = templateId.toLowerCase();
+        MenuTemplate template = getTemplates().get(templateId);
+        if (template != null){
+            return template;
         }else{
-            throw new MenuTemplateNotFoundException("Template not found: " + templateId);
+            throw new MenuTemplateNotFoundException(templateId);
+        }
+    }
+
+    /**
+     * Get menu object from viewer data
+     *
+     * @param viewerData target viewer data
+     * @param templateId menu object's template id
+     * @return menu object
+     */
+    public MenuObject getPlayerMenuObject(HashMap<String, MenuObject> viewerData, String templateId){
+        templateId = templateId.toLowerCase();
+        MenuObject menuObject = viewerData.get(templateId);
+        if (menuObject == null){
+            if (getTemplates().containsKey(templateId)){
+                menuObject = getTemplates().get(templateId).createObject();
+            }
+        }
+        return menuObject;
+    }
+
+    /**
+     * Get target player viewer data
+     *
+     * @param playerUniqueId target player's uuid
+     * @return viewer data
+     */
+    public HashMap<String, MenuObject> getPlayerViewerData(UUID playerUniqueId){
+        if (getViewersObjectData().containsKey(playerUniqueId)){
+            return getViewersObjectData().get(playerUniqueId);
+        }else{
+            HashMap<String, MenuObject> objectData = new HashMap<>();
+            getViewersObjectData().put(playerUniqueId, objectData);
+            return objectData;
         }
     }
 

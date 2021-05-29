@@ -2,8 +2,8 @@ package io.github.tivecs.thermallib.menu.exception;
 
 public class MenuTemplateNotFoundException extends Exception {
 
-    public MenuTemplateNotFoundException(String message){
-        super(message);
+    public MenuTemplateNotFoundException(String templateId){
+        super("Menu template not found: " + templateId);
     }
 
 }
