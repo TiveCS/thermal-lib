@@ -141,18 +141,29 @@ public abstract class MenuTemplate {
     }
 
     /**
-     * Create menu object
+     * Create menu object with pre-made metadata
      *
+     * @param metadata pre-made metadata
      * @return created menu object
      */
-    public MenuObject createObject() {
+    public MenuObject createObject(HashMap<String, Object> metadata) {
         MenuObject menuObject = new MenuObject(this);
 
         menuObject.initialize();
+        menuObject.getMetadata().putAll(metadata);
 
         MenuObjectCreateEvent objectCreateEvent = new MenuObjectCreateEvent(this, menuObject);
         Bukkit.getPluginManager().callEvent(objectCreateEvent);
         return menuObject;
+    }
+
+    /**
+     * Create menu object
+     *
+     * @return created menu object
+     */
+    public MenuObject createObject(){
+        return createObject(new HashMap<>());
     }
 
     /**

@@ -119,9 +119,10 @@ public class MenuManager implements Listener {
      * @param otherPlayer the target player that will be used to get menu object
      * @param templateId menu object's template id
      * @param page menu object's target page
+     * @param inputMetadata input metadata to menu object
      * @throws MenuTemplateNotFoundException throw when template is not found
      */
-    public void open(Player viewer, UUID otherPlayer, String templateId, int page) throws MenuTemplateNotFoundException {
+    public void open(Player viewer, UUID otherPlayer, String templateId, int page, HashMap<String, Object> inputMetadata) throws MenuTemplateNotFoundException {
         templateId = templateId.toLowerCase();
         MenuTemplate template = findTemplate(templateId);
 
@@ -134,7 +135,7 @@ public class MenuManager implements Listener {
 
             MenuViewOpenEvent viewOpenEvent;
             boolean isAlreadyCreated = objectData.containsKey(template.getId());
-            menuObject = getPlayerMenuObject(objectData, templateId);
+            menuObject = getPlayerMenuObject(objectData, templateId, inputMetadata);
             viewOpenEvent = new MenuViewOpenEvent(menuObject, viewer, menuObject.getPage(), page, isAlreadyCreated);
 
             menuObject.setPage(page);
@@ -146,6 +147,19 @@ public class MenuManager implements Listener {
 
             Bukkit.getPluginManager().callEvent(viewOpenEvent);
         }
+    }
+
+    /**
+     * Open target player's menu object by its template id
+     *
+     * @param viewer the player who want to open menu
+     * @param otherPlayer the target player that will be used to get menu object
+     * @param templateId menu object's template id
+     * @param page menu object's target page
+     * @throws MenuTemplateNotFoundException throw when template is not found
+     */
+    public void open(Player viewer, UUID otherPlayer, String templateId, int page) throws MenuTemplateNotFoundException {
+        open(viewer, otherPlayer, templateId, page, new HashMap<>());
     }
 
     /**
@@ -182,17 +196,31 @@ public class MenuManager implements Listener {
      *
      * @param viewerData target viewer data
      * @param templateId menu object's template id
+     * @param inputMetadata input metadata to menu object
      * @return menu object
      */
-    public MenuObject getPlayerMenuObject(HashMap<String, MenuObject> viewerData, String templateId){
+    public MenuObject getPlayerMenuObject(HashMap<String, MenuObject> viewerData, String templateId, HashMap<String, Object> inputMetadata){
         templateId = templateId.toLowerCase();
         MenuObject menuObject = viewerData.get(templateId);
         if (menuObject == null){
             if (getTemplates().containsKey(templateId)){
-                menuObject = getTemplates().get(templateId).createObject();
+                menuObject = getTemplates().get(templateId).createObject(inputMetadata);
             }
+        }else{
+            menuObject.getMetadata().putAll(inputMetadata);
         }
         return menuObject;
+    }
+
+    /**
+     * Get menu object from viewer data
+     *
+     * @param viewerData target viewer data
+     * @param templateId menu object's template id
+     * @return menu object
+     */
+    public MenuObject getPlayerMenuObject(HashMap<String, MenuObject> viewerData, String templateId){
+        return getPlayerMenuObject(viewerData, templateId, new HashMap<>());
     }
 
     /**
