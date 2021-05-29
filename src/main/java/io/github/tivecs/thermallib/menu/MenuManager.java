@@ -119,7 +119,7 @@ public class MenuManager implements Listener {
      * @param otherPlayer the target player that will be used to get menu object
      * @param templateId menu object's template id
      * @param page menu object's target page
-     * @param inputMetadata input metadata to menu object
+     * @param inputMetadata input metadata to menu object if object is not exists before
      * @throws MenuTemplateNotFoundException throw when template is not found
      */
     public void open(Player viewer, UUID otherPlayer, String templateId, int page, HashMap<String, Object> inputMetadata) throws MenuTemplateNotFoundException {
@@ -206,8 +206,6 @@ public class MenuManager implements Listener {
             if (getTemplates().containsKey(templateId)){
                 menuObject = getTemplates().get(templateId).createObject(inputMetadata);
             }
-        }else{
-            menuObject.getMetadata().putAll(inputMetadata);
         }
         return menuObject;
     }
