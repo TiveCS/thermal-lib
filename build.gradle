@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+}
+
+group 'io.github.tivecs.thermallib'
+version '1.0.0'
+
+repositories {
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'}
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url = 'https://oss.sonatype.org/content/repositories/central' }
+
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+    implementation group: 'com.google.code.findbugs',  name: 'jsr305', version: '3.0.2'
+
+    compileOnly 'org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT'
+}
+
+jar{
+    destinationDir(file("${rootDir}/../../Server/plugins/"))
+}
+
+test {
+    useJUnitPlatform()
+}
