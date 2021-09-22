@@ -21,19 +21,26 @@ public abstract class MenuComponent {
     private final HashMap<String, Object> state;
 
     private MenuPropsSlotMap propsSlotMap;
+    private String key;
+    private boolean isUnique;
 
     private ItemStack item = null;
     private String name = null;
     private int amount = 1;
     private List<String> lore = null;
 
-    public MenuComponent(@Nonnull String componentId, @Nonnull XMaterial material, @Nonnull Menu menu){
+    public MenuComponent(@Nonnull String componentId, @Nonnull String key, @Nonnull XMaterial material, @Nonnull Menu menu){
         this.menu = menu;
+        this.key = key;
         this.state = new HashMap<>();
+        this.isUnique = true;
         this.propsSlotMap = new MenuPropsSlotMap(menu, this);
 
         setComponentId(componentId);
         setMaterial(material);
+    }
+    public MenuComponent(@Nonnull String componentId, @Nonnull XMaterial material, @Nonnull Menu menu){
+        this(componentId, "default", material, menu);
     }
 
     public void addPreState(String key, Object value){
@@ -48,7 +55,7 @@ public abstract class MenuComponent {
     }
 
     public void writeSlotMapValues(@Nonnull Menu menu){
-        String path = "map." + getComponentId();
+        String path = "map." + getComponentId() + "." + getKey();
         StorageYML storage = menu.getStorage();
 
         storage.setIfNotExists(path + ".min-page", getPropsSlotMap().getMinPage());
@@ -58,7 +65,7 @@ public abstract class MenuComponent {
 
     @SuppressWarnings("unchecked")
     public void retrieveSlotMapValues(@Nonnull Menu menu){
-        String path = "map." + getComponentId();
+        String path = "map." + getComponentId() + "." + getKey();
         StorageYML storage = menu.getStorage();
 
         getPropsSlotMap().setMinPage((Integer) storage.get(path + ".min-page"));
@@ -129,6 +136,11 @@ public abstract class MenuComponent {
         this.componentId = componentId;
     }
 
+    public MenuComponent setKey(String key) {
+        this.key = key;
+        return this;
+    }
+
     public void setAmount(int amount) {
         this.amount = amount;
     }
@@ -145,8 +157,16 @@ public abstract class MenuComponent {
         this.material = material;
     }
 
+    public void setUnique(boolean unique) {
+        isUnique = unique;
+    }
+
     public boolean hasPropsSlotMap(){
         return getPropsSlotMap().getSlots().isEmpty();
+    }
+
+    public boolean isUnique() {
+        return isUnique;
     }
 
     public ItemStack getItem() {
@@ -159,6 +179,10 @@ public abstract class MenuComponent {
 
     public List<String> getLore() {
         return lore;
+    }
+
+    public String getKey() {
+        return key;
     }
 
     public MenuPropsSlotMap getPropsSlotMap() {

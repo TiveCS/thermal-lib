@@ -54,7 +54,6 @@ public class MenuPropsSlotMap {
 
     public MenuPropsSlotMap setSlots(List<Integer> slotsList){
         getSlots().clear();
-        System.out.println(">> " + slotsList);
         getSlots().addAll(slotsList);
         return this;
     }

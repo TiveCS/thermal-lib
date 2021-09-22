@@ -17,7 +17,7 @@ public class MenuObject {
 
     private Inventory inventory;
 
-    private final HashMap<String, MenuPropsSlotMap> propsSlotMap;
+    private final HashMap<String, HashMap<String, MenuPropsSlotMap>> propsSlotMap;
     private final HashMap<Integer, HashMap<Integer, MenuComponent>> renderedSlotMap; // TODO for performance efficient. save page previous used component
     private final HashMap<Integer, MenuComponentObject> propsObject;
 
@@ -48,16 +48,18 @@ public class MenuObject {
     public void render(int page){
         getPropsObject().clear();
 
-        for (MenuPropsSlotMap propsSlot : getPropsSlotMap().values()){
-            boolean isMinPageCorrect = propsSlot.getMinPage() == 0 || (propsSlot.getMinPage() != -1 && propsSlot.getMinPage() <= page);
-            boolean isMaxPageCorrect = propsSlot.getMaxPage() == 0 || (propsSlot.getMaxPage() != -1 && propsSlot.getMaxPage() >= page);
-            boolean isDisabled = propsSlot.getMinPage() == -1 && propsSlot.getMaxPage() == -1;
-            boolean isCorrectPage = isMaxPageCorrect && isMinPageCorrect && !isDisabled;
+        for (HashMap<String, MenuPropsSlotMap> propsMap : getPropsSlotMap().values()){
+            for (MenuPropsSlotMap propsSlot : propsMap.values()){
+                boolean isMinPageCorrect = propsSlot.getMinPage() == 0 || (propsSlot.getMinPage() != -1 && propsSlot.getMinPage() <= page);
+                boolean isMaxPageCorrect = propsSlot.getMaxPage() == 0 || (propsSlot.getMaxPage() != -1 && propsSlot.getMaxPage() >= page);
+                boolean isDisabled = propsSlot.getMinPage() == -1 && propsSlot.getMaxPage() == -1;
+                boolean isCorrectPage = isMaxPageCorrect && isMinPageCorrect && !isDisabled;
 
-            if (isCorrectPage){
-                List<Integer> slots = propsSlot.getSlots();
-                for (int slot : slots){
-                    getPropsObject().put(slot, propsSlot.getComponent().createObject(this, slot));
+                if (isCorrectPage){
+                    List<Integer> slots = propsSlot.getSlots();
+                    for (int slot : slots){
+                        getPropsObject().put(slot, propsSlot.getComponent().createObject(this, slot));
+                    }
                 }
             }
         }
@@ -153,7 +155,7 @@ public class MenuObject {
         return propsObject;
     }
 
-    public HashMap<String, MenuPropsSlotMap> getPropsSlotMap() {
+    public HashMap<String, HashMap<String, MenuPropsSlotMap>> getPropsSlotMap() {
         return propsSlotMap;
     }
 

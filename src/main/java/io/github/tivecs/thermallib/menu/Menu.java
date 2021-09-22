@@ -5,9 +5,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class Menu {
 
@@ -19,7 +18,7 @@ public abstract class Menu {
     private final String menuId;
     private MenuComponent[] props;
     private HashMap<String, Object> state;
-    private HashMap<String, MenuPropsSlotMap> propsSlotMap;
+    private HashMap<String, HashMap<String, MenuPropsSlotMap>> propsSlotMap;
 
     // Inventory default values
     private String title;
@@ -62,9 +61,13 @@ public abstract class Menu {
     public void menuWillUpdate(@Nonnull MenuObject menuObject){}
     public void menuDidUpdate(@Nonnull MenuObject menuObject){}
 
-    public MenuComponent findProps(@Nonnull String componentId){
+    public MenuComponent findProp(@Nonnull String componentId){
         Optional<MenuComponent> found = Arrays.stream(getProps()).filter((component) -> component.getComponentId().equals(componentId)).findFirst();
         return found.orElse(null);
+    }
+
+    public List<MenuComponent> findProps(@Nonnull String componentId){
+        return Arrays.stream(getProps()).filter((component) -> component.getComponentId().equals(componentId)).collect(Collectors.toList());
     }
 
     public void addPreState(String key, Object value){
@@ -87,8 +90,10 @@ public abstract class Menu {
         // handle props component's default value (material, name, amount, lore)
         if (isPropsExists()){
             for (MenuComponent component : getProps()){
-                component.writeDefaultValues(this);
-                component.writeSlotMapValues(this);
+                if (component.isUnique()) {
+                    component.writeDefaultValues(this);
+                    component.writeSlotMapValues(this);
+                }
             }
         }
 
@@ -101,16 +106,39 @@ public abstract class Menu {
 
         if (isPropsExists()){
             for (MenuComponent component : getProps()){
-                component.retrieveValues(this);
-                component.createItem();
+                if (component.isUnique()) {
+                    component.retrieveValues(this);
+                    component.createItem();
 
-                component.retrieveSlotMapValues(this);
-                getPropsSlotMap().put(component.getComponentId(), component.getPropsSlotMap());
+                    getPropsSlotMap().putIfAbsent(component.getComponentId(), new HashMap<>());
+
+                    component.retrieveSlotMapValues(this);
+                    getPropsSlotMap().get(component.getComponentId()).put(component.getKey(), component.getPropsSlotMap());
+                }
             }
         }
     }
 
     private void setProps(MenuComponent[] props){
+
+        List<MenuComponent> propsList = new ArrayList<>(Arrays.asList(props));
+        HashSet<String> componentKeys = new HashSet<>();
+
+        for (MenuComponent component : propsList){
+            if (!component.isUnique()){
+                continue;
+            }
+            if (componentKeys.contains(component.getComponentId() + ":" + component.getKey())){
+                System.out.println("Menu '" + getMenuId() + "' contains props '" + component.getComponentId() + ":" + component.getKey() + "' that doesn't have unique key");
+                List<MenuComponent> duplicateComponent = propsList.stream().filter(comp -> comp.getComponentId().equals(component.getComponentId()) && comp.getKey().equals(component.getKey())).collect(Collectors.toList());
+                for (MenuComponent duplicate : duplicateComponent){
+                    duplicate.setUnique(false);
+                }
+                continue;
+            }
+            componentKeys.add(component.getComponentId() + ":" + component.getKey());
+        }
+
         this.props = props;
     }
 
@@ -158,7 +186,7 @@ public abstract class Menu {
         return menuId;
     }
 
-    public HashMap<String, MenuPropsSlotMap> getPropsSlotMap() {
+    public HashMap<String, HashMap<String, MenuPropsSlotMap>> getPropsSlotMap() {
         return propsSlotMap;
     }
 

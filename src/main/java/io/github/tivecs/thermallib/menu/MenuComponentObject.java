@@ -31,7 +31,6 @@ public class MenuComponentObject {
     public ItemStack createObjectItem(){
         ItemStack item = getComponent().getItem().clone();
 
-        // TODO add state to item data (lore, displayName)
         item = useState(item);
 
         setObjectItem(item);
